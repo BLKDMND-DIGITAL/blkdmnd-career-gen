@@ -84,4 +84,5 @@ TAILORING LOGIC:
 1. Read the job_description carefully. Identify Core responsibilities, Key tools, and Domain.
 2. Map those signals onto ${profile.name}'s background.
 3. Highlight aspects that best match the target_role.
+4. For 'recruiter_dm', you MUST explicitly mention a specific skill or project requirement found in the JD and explain how ${profile.name} addresses it, demonstrating immediate ROI.
 `;

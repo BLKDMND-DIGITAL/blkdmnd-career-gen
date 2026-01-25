@@ -10,11 +10,16 @@ const responseSchema: Schema = {
     linkedin_about_section: { type: Type.STRING, description: "LinkedIn 'About' section summary, max 2200 characters." },
     easy_apply_introduce_yourself: { type: Type.STRING, description: "Short intro for Easy Apply, max 500 characters." },
     easy_apply_why_good_fit: { type: Type.STRING, description: "Answer for 'Why are you a good fit?', max 500 characters." },
-    recruiter_dm: { type: Type.STRING, description: "Short DM for recruiter, max 350 characters." },
+    recruiter_dm: { type: Type.STRING, description: "Short DM for recruiter (max 350 chars). MUST mention a specific project or skill requirement from the JD." },
     connection_note: { type: Type.STRING, description: "Personalized connection note, max 250 characters." },
     interview_bullets: {
       type: Type.ARRAY,
-      description: "5–7 bullets for phone screen, each max 180 characters.",
+      description: "5–7 high-impact talking points for a phone screen or interview, each max 180 characters.",
+      items: { type: Type.STRING },
+    },
+    interview_prep_tips: {
+      type: Type.ARRAY,
+      description: "4-6 specific study tips or technical topics to review based on the JD, each max 200 characters.",
       items: { type: Type.STRING },
     },
     tailored_keywords: {
@@ -41,7 +46,7 @@ const responseSchema: Schema = {
   required: [
     "linkedin_headline", "linkedin_about_section", "easy_apply_introduce_yourself",
     "easy_apply_why_good_fit", "recruiter_dm", "connection_note", "interview_bullets",
-    "tailored_keywords", "resume_target_title", "resume_professional_summary",
+    "interview_prep_tips", "tailored_keywords", "resume_target_title", "resume_professional_summary",
     "resume_core_bullets", "resume_role_specific_bullets", "cover_letter_body",
     "match_score", "match_explanation"
   ],

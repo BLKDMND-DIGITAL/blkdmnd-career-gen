@@ -9,6 +9,7 @@ export interface TailoredContent {
   recruiter_dm: string;
   connection_note: string;
   interview_bullets: string[];
+  interview_prep_tips: string[];
   tailored_keywords: string[];
   resume_target_title: string;
   resume_professional_summary: string;
