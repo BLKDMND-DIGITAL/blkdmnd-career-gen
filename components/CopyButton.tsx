@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 
@@ -23,14 +24,14 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ text, label = "Copy", cl
   return (
     <button
       onClick={handleCopy}
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 border ${
+      className={`flex items-center gap-2 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 border shadow-sm ${
         copied 
-          ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-          : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white hover:bg-slate-700'
+          ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30' 
+          : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-600'
       } ${className}`}
       title="Copy to clipboard"
     >
-      {copied ? <Check size={14} /> : <Copy size={14} />}
+      {copied ? <Check size={12} strokeWidth={3} /> : <Copy size={12} strokeWidth={3} />}
       <span>{copied ? 'Copied' : label}</span>
     </button>
   );

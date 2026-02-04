@@ -23,6 +23,7 @@ export interface TailoredContent {
 export interface CandidateProfile {
   name: string;
   location: string;
+  phone?: string;
   email?: string;
   github?: string;
   linkedin?: string;

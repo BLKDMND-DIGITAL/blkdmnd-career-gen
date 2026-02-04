@@ -1,9 +1,10 @@
 
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { getSystemPrompt } from "../constants";
 import { TailoredContent, CandidateProfile } from "../types";
 
-const responseSchema: Schema = {
+// Removed deprecated Schema type annotation; using plain object for responseSchema.
+const responseSchema = {
   type: Type.OBJECT,
   properties: {
     linkedin_headline: { type: Type.STRING, description: "LinkedIn headline, max 220 characters." },
@@ -52,14 +53,17 @@ const responseSchema: Schema = {
   ],
 };
 
-const profileSchema: Schema = {
+// Updated profileSchema to include all contact fields
+const profileSchema = {
   type: Type.OBJECT,
   properties: {
     name: { type: Type.STRING },
     location: { type: Type.STRING },
     email: { type: Type.STRING },
+    phone: { type: Type.STRING },
     github: { type: Type.STRING },
     linkedin: { type: Type.STRING },
+    portfolio_name: { type: Type.STRING },
     roles: { type: Type.ARRAY, items: { type: Type.STRING } },
     core_skills: { type: Type.ARRAY, items: { type: Type.STRING } },
     signature_projects: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -71,7 +75,7 @@ const profileSchema: Schema = {
 };
 
 export const parseResumePDF = async (base64Data: string): Promise<CandidateProfile> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: {
@@ -85,11 +89,34 @@ export const parseResumePDF = async (base64Data: string): Promise<CandidateProfi
       responseSchema: profileSchema,
     }
   });
-  return JSON.parse(response.text) as CandidateProfile;
+  
+  const text = response.text;
+  if (!text) throw new Error("Could not extract career information from PDF.");
+  return JSON.parse(text) as CandidateProfile;
+};
+
+export const parseResumeText = async (resumeText: string): Promise<CandidateProfile> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: {
+      parts: [
+        { text: `Extract the career information from this resume/bio text and format it into the specified JSON structure. Be precise.\n\nTEXT:\n${resumeText}` }
+      ]
+    },
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: profileSchema,
+    }
+  });
+  
+  const text = response.text;
+  if (!text) throw new Error("Could not extract career information from text.");
+  return JSON.parse(text) as CandidateProfile;
 };
 
 export const extractTextFromPDF = async (base64Data: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: {
@@ -99,7 +126,7 @@ export const extractTextFromPDF = async (base64Data: string): Promise<string> =>
       ]
     }
   });
-  return response.text;
+  return response.text || "";
 };
 
 export const generateContent = async (
@@ -107,12 +134,7 @@ export const generateContent = async (
   targetRole: string,
   profile: CandidateProfile
 ): Promise<TailoredContent> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key is missing.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const systemPrompt = getSystemPrompt(profile);
 
   const prompt = `

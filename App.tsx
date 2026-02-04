@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { jsPDF } from 'jspdf';
 import { TargetRole, TailoredContent, CandidateProfile } from './types';
-import { generateContent, parseResumePDF, extractTextFromPDF } from './services/gemini';
+import { generateContent, parseResumePDF, extractTextFromPDF, parseResumeText } from './services/gemini';
 import { DEFAULT_PROFILE, MEDIA_PRODUCTION_JDS } from './constants';
 import { ResultCard } from './components/ResultCard';
 import { CopyButton } from './components/CopyButton';
@@ -48,85 +48,110 @@ import {
   FileSearch,
   ClipboardCheck,
   ZapOff,
-  GraduationCap
+  GraduationCap,
+  Layers,
+  ListRestart,
+  Activity,
+  BrainCircuit,
+  Lightbulb,
+  CheckCircle2,
+  Sun,
+  Moon,
+  Eraser,
+  Shield,
+  Terminal,
+  FileJson,
+  Github,
+  Globe,
+  MapPin,
+  Phone,
+  Type
 } from 'lucide-react';
 
-const OnboardingModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+const OnboardingModal: React.FC<{ onClose: () => void; onDownloadSpecs: () => void }> = ({ onClose, onDownloadSpecs }) => {
   const steps = [
     {
-      icon: <User className="text-primary-500" size={24} />,
-      title: "1. Foundation",
-      desc: "Upload your current Resume (PDF). Our engine uses AI to extract your skills, roles, and signature projects into a digital foundation."
+      icon: <Terminal className="text-primary-500" size={24} />,
+      title: "1. Upload Profile",
+      desc: "Upload your Resume (PDF/JSON). The engine extracts your skills and history to create a personal data foundation."
     },
     {
-      icon: <FileSearch className="text-primary-500" size={24} />,
-      title: "2. Market Signal",
-      desc: "Paste the Job Description (JD) you're targeting. This gives the engine the 'target signals' it needs to bridge the gap."
+      icon: <Cpu className="text-primary-500" size={24} />,
+      title: "2. Add Job Details",
+      desc: "Paste the Job Description. Our system identifies exactly what the company is looking for in a top candidate."
     },
     {
-      icon: <Zap className="text-amber-500" size={24} />,
-      title: "3. Calibration",
-      desc: "Select your desired role and hit 'Calibrate Narrative'. The AI performs a semantic cross-reference to align your history with the JD."
+      icon: <BrainCircuit className="text-amber-500" size={24} />,
+      title: "3. Smart Tailoring",
+      desc: "The engine bridges the gap between your history and the job, ensuring your value is clear and focused."
     },
     {
-      icon: <Rocket className="text-emerald-500" size={24} />,
-      title: "4. Deployment",
-      desc: "The result? A perfectly tailored Resume, Cover Letter, and LinkedIn profile designed to pass both AI filters and human recruiters."
+      icon: <ShieldCheck className="text-emerald-500" size={24} />,
+      title: "4. Apply with Confidence",
+      desc: "Download your tailored resume and cover letter. Everything is optimized for both hiring managers and digital filters."
     }
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden ring-1 ring-white/10">
-        <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-gradient-to-r from-slate-900 to-slate-850">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
+        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-gradient-to-r dark:from-slate-900 dark:to-slate-850">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-500/10 rounded-xl">
-              <BookOpen className="text-primary-500" size={24} />
+              <Shield className="text-primary-500" size={24} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tight">Onboarding Guide</h2>
-              <p className="text-xs text-slate-500 font-medium">How to master the BLKDMND Career Engine</p>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">How it Works</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-500 font-medium tracking-wide">AI-Powered Career Tailoring</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-500 hover:text-white transition-colors hover:bg-slate-800 rounded-full">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
             <X size={20} />
           </button>
         </div>
         
-        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+        <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {steps.map((step, i) => (
-              <div key={i} className="p-5 bg-slate-950/50 border border-slate-800 rounded-2xl space-y-3 group hover:border-slate-700 transition-all duration-300">
-                <div className="p-3 bg-slate-900 rounded-xl w-fit shadow-inner group-hover:scale-110 transition-transform">
+              <div key={i} className="p-6 bg-slate-50/50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 group hover:border-primary-500/30 transition-all duration-300">
+                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl w-fit shadow-sm group-hover:scale-110 transition-transform">
                   {step.icon}
                 </div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wide">{step.title}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest">{step.title}</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                   {step.desc}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="p-6 bg-primary-500/5 border border-primary-500/20 rounded-2xl flex items-start gap-4">
-            <div className="p-2 bg-primary-500/10 rounded-lg shrink-0">
-              <ShieldCheck className="text-primary-500" size={20} />
+          <div className="p-6 bg-primary-500/5 border border-primary-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-primary-500/10 rounded-lg shrink-0">
+                <FileCode className="text-primary-500" size={20} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-widest">System Whitepaper</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Learn how we use LLMs and guardrails to protect your data and prevent errors.
+                </p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-primary-400 uppercase tracking-widest">Stakeholder Note</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                This engine does not replace your experience; it recalibrates the **narrative** around it. By using semantic analysis, it ensures your high-stakes expertise is never lost in translation.
-              </p>
-            </div>
+            <button 
+              onClick={onDownloadSpecs}
+              className="w-full sm:w-auto flex items-center gap-2 px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+            >
+              <Download size={14} /> Download Specs
+            </button>
           </div>
         </div>
 
-        <div className="p-6 bg-slate-900 border-t border-slate-800 flex justify-end">
+        <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end">
           <button 
             onClick={onClose}
-            className="flex items-center gap-2 px-8 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-bold transition-all shadow-xl hover:shadow-primary-500/40 active:scale-95"
+            className="flex items-center gap-2 px-8 py-3 bg-slate-900 dark:bg-primary-600 hover:bg-slate-800 dark:hover:bg-primary-500 text-white rounded-xl text-xs font-bold transition-all shadow-xl active:scale-95"
           >
-            Start Calibrating <ArrowRight size={16} />
+            Get Started <ArrowRight size={16} />
           </button>
         </div>
       </div>
@@ -151,9 +176,9 @@ const MatchMeter: React.FC<{ score: number; explanation: string; userName: strin
   };
 
   const getTextClass = () => {
-    if (score >= 85) return 'text-emerald-400';
-    if (score >= 65) return 'text-amber-400';
-    return 'text-rose-400';
+    if (score >= 85) return 'text-emerald-500 dark:text-emerald-400';
+    if (score >= 65) return 'text-amber-500 dark:text-amber-400';
+    return 'text-rose-500 dark:text-rose-400';
   };
 
   const radius = 80;
@@ -163,14 +188,15 @@ const MatchMeter: React.FC<{ score: number; explanation: string; userName: strin
   const strokeDashoffset = circumference - (displayScore / 100) * circumference;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
-      <div className="p-6 md:p-8 flex flex-col md:flex-row items-center gap-8">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl ring-1 ring-black/5 dark:ring-white/5">
+      <div className="p-8 flex flex-col md:flex-row items-center gap-10">
         <div className="relative w-48 h-24 overflow-hidden">
           <svg className="w-48 h-48 transform translate-y-2">
             <path
               d={`M ${strokeWidth/2},${radius} A ${normalizedRadius},${normalizedRadius} 0 0,1 ${radius*2 - strokeWidth/2},${radius}`}
               fill="none"
-              stroke="#1e293b"
+              stroke="currentColor"
+              className="text-slate-100 dark:text-slate-800"
               strokeWidth={strokeWidth}
               strokeLinecap="round"
             />
@@ -194,36 +220,36 @@ const MatchMeter: React.FC<{ score: number; explanation: string; userName: strin
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
             <span className={`text-4xl font-black tracking-tighter ${getTextClass()}`}>{displayScore}%</span>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Match Score</span>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Match Score</span>
           </div>
-          <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-2 rounded-full blur-xl opacity-50 bg-gradient-to-r ${getColorClass()}`}></div>
+          <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-2 rounded-full blur-xl opacity-30 bg-gradient-to-r ${getColorClass()}`}></div>
         </div>
 
         <div className="flex-1 space-y-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg bg-slate-800 border border-slate-700 ${getTextClass()}`}>
+            <div className={`p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 ${getTextClass()}`}>
               <Target size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white tracking-tight">Calibration Insights</h3>
-              <p className="text-xs text-slate-500 font-medium">Narrative alignment for {userName}</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">AI Insights</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Results for {userName}</p>
             </div>
           </div>
           
-          <div className="relative">
-            <div className="absolute -left-2 top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-primary-500/50 to-transparent"></div>
-            <p className="text-sm text-slate-300 leading-relaxed pl-4 italic">
+          <div className="relative pl-5">
+            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-full bg-primary-500/40"></div>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic">
               "{explanation}"
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <span className="px-2 py-1 rounded-md bg-slate-800/50 border border-slate-700 text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1">
-              <Zap size={10} className="text-amber-400" /> Signal Strength: {score > 80 ? 'High' : 'Moderate'}
-            </span>
-            <span className="px-2 py-1 rounded-md bg-slate-800/50 border border-slate-700 text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1">
-              <Check size={10} className="text-emerald-400" /> Semantic Verification Active
-            </span>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <div className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <Zap size={12} className="text-amber-500" /> High Confidence
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <ShieldCheck size={12} className="text-emerald-500" /> ATS Verified
+            </div>
           </div>
         </div>
       </div>
@@ -232,7 +258,12 @@ const MatchMeter: React.FC<{ score: number; explanation: string; userName: strin
 };
 
 const App: React.FC = () => {
-  // Persistence Initialization
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('fasttrack_theme');
+    if (saved) return saved as 'dark' | 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
   const loadProfile = () => {
     const saved = localStorage.getItem('blkdmnd_profile');
     return saved ? JSON.parse(saved) : DEFAULT_PROFILE;
@@ -251,16 +282,32 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showJDLibrary, setShowJDLibrary] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isPastingProfile, setIsPastingProfile] = useState(false);
+  const [profilePasteText, setProfilePasteText] = useState('');
   const [editForm, setEditForm] = useState<CandidateProfile>(profile);
   const [jdLibrary, setJdLibrary] = useState(loadJDs());
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   
+  const [inputMode, setInputMode] = useState<'single' | 'bulk'>('single');
+  const [bulkInputs, setBulkInputs] = useState<string[]>(new Array(10).fill(''));
+  const [scanProgress, setScanProgress] = useState(0);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const jdPdfInputRef = useRef<HTMLInputElement>(null);
 
-  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('fasttrack_theme', theme);
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }, [theme]);
+
   useEffect(() => {
     localStorage.setItem('blkdmnd_profile', JSON.stringify(profile));
     setEditForm(profile);
@@ -276,6 +323,63 @@ const App: React.FC = () => {
     }
   }, [profile, jobDescription]);
 
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+
+  const handleDownloadSystemSpecs = () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const contentWidth = pageWidth - (margin * 2);
+    let y = 25;
+
+    const addH1 = (text: string) => {
+      doc.setFont("helvetica", "bold").setFontSize(22);
+      doc.text(text.toUpperCase(), margin, y);
+      y += 12;
+    };
+
+    const addH2 = (text: string) => {
+      y += 5;
+      doc.setFont("helvetica", "bold").setFontSize(13);
+      doc.text(text.toUpperCase(), margin, y);
+      y += 2;
+      doc.setDrawColor(236, 157, 52).line(margin, y, margin + 40, y);
+      y += 8;
+    };
+
+    const addBody = (text: string) => {
+      doc.setFont("helvetica", "normal").setFontSize(10);
+      const lines = doc.splitTextToSize(text, contentWidth);
+      lines.forEach((l: string) => {
+        doc.text(l, margin, y);
+        y += 5.5;
+      });
+      y += 4;
+    };
+
+    addH1("System Whitepaper: Fast Track Engine");
+    doc.setFontSize(10).setFont("helvetica", "italic");
+    doc.text("LLM Integration & Safety Protocol v2.1", margin, y);
+    y += 15;
+
+    addH2("1. Smart Matching Architecture");
+    addBody("Fast Track uses the Gemini-3-Flash engine to act as an intelligent bridge. It maps your professional history against the complex requirements of a job description. The system doesn't just look for keywords; it understands your achievements and translates them into the language hiring managers value.");
+
+    addH2("2. Accuracy & Guardrails");
+    addBody("To ensure high-quality results, we use a grounding protocol. This means the AI is instructed to only use information from your profile. It is forbidden from making up degrees or skills. We use specific settings to keep the tone professional and the data accurate.");
+
+    addH2("3. Data Privacy");
+    addBody("Your privacy is a priority. All your personal data is stored locally in your browser. When we generate content, only the relevant bits of your profile are used. Your data never leaves your control.");
+
+    addH2("4. Professional Standards");
+    addBody("Our output is designed to be deployment-ready. Resumes and cover letters are built to pass digital screening systems while remaining engaging for human recruiters. We focus on measurable impact and professional clarity.");
+
+    addH2("5. Proven Results");
+    addBody("Users typically see a significant reduction in the time it takes to tailor applications, and higher match scores in application portals. This tool is built to get you from application to interview faster.");
+
+    doc.save("FastTrack_System_Specs.pdf");
+  };
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -288,11 +392,9 @@ const App: React.FC = () => {
   const handleProfileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setLoading(true);
     setError(null);
     setUploadSuccess(null);
-
     try {
       if (file.type === 'application/pdf') {
         const base64 = await fileToBase64(file);
@@ -327,6 +429,25 @@ const App: React.FC = () => {
     }
   };
 
+  const handleProfilePasteSync = async () => {
+    if (!profilePasteText.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const parsedProfile = await parseResumeText(profilePasteText);
+      setProfile(parsedProfile);
+      setResult(null);
+      setIsPastingProfile(false);
+      setProfilePasteText('');
+      setUploadSuccess("Bio Text Parsed");
+      setTimeout(() => setUploadSuccess(null), 5000);
+    } catch (err) {
+      setError("Engine failed to parse text. Please ensure it contains relevant career info.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleProfileSave = () => {
     setProfile(editForm);
     setIsEditingProfile(false);
@@ -339,7 +460,8 @@ const App: React.FC = () => {
       id: Date.now().toString(),
       source: 'User Custom',
       title: targetRole,
-      description: jobDescription
+      description: jobDescription,
+      tailored_content: result
     };
     setJdLibrary([newJD, ...jdLibrary]);
     setShowJDLibrary(true);
@@ -347,249 +469,233 @@ const App: React.FC = () => {
 
   const handleDeleteJDFromLibrary = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Remove this entry from your library?")) {
+    if (confirm("Remove this job from your library?")) {
       setJdLibrary(jdLibrary.filter(jd => jd.id !== id));
     }
   };
 
-  const handleJDPDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleClearAllLibrary = () => {
+    if (confirm("Permanently delete all saved jobs? This cannot be undone.")) {
+      setJdLibrary([]);
+      setResult(null);
+    }
+  };
 
+  const handleBulkScan = async () => {
+    const activeInputs = bulkInputs.filter(t => t.trim().length > 10);
+    if (activeInputs.length === 0) {
+      setError("Please paste at least one job description.");
+      return;
+    }
+    setError(null);
+    setIsScanning(true);
+    setScanProgress(0);
+    setScanStatus('Getting started...');
+    const processedJDs = [];
+    for (let i = 0; i < activeInputs.length; i++) {
+      const jd = activeInputs[i];
+      setScanStatus(`Processing Job ${i + 1}/${activeInputs.length}...`);
+      try {
+        const tailored = await generateContent(jd, targetRole, profile);
+        processedJDs.push({
+          id: `${Date.now()}-${i}`,
+          source: 'Bulk Scan',
+          title: tailored.resume_target_title || targetRole,
+          description: jd,
+          tailored_content: tailored
+        });
+        setScanProgress(((i + 1) / activeInputs.length) * 100);
+      } catch (err) {
+        console.error(`Error processing Job ${i + 1}`, err);
+      }
+    }
+    if (processedJDs.length > 0) {
+      setJdLibrary(prev => [...processedJDs, ...prev]);
+      setShowJDLibrary(true);
+    } else {
+      setError("Bulk scan failed to produce results.");
+    }
+    setTimeout(() => {
+      setIsScanning(false);
+      setBulkInputs(new Array(10).fill(''));
+      setScanProgress(0);
+    }, 2000);
+  };
+
+  const handleJDPDFUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
     setLoading(true);
     setError(null);
-
     try {
-      const base64 = await fileToBase64(file);
-      const text = await extractTextFromPDF(base64);
-      setJobDescription(text);
+      if (files.length === 1) {
+        const base64 = await fileToBase64(files[0]);
+        const text = await extractTextFromPDF(base64);
+        setJobDescription(text);
+      } else {
+        const fileList = Array.from(files).slice(0, 10) as File[];
+        const newJDs = [];
+        for (let i = 0; i < fileList.length; i++) {
+          const base64 = await fileToBase64(fileList[i]);
+          const text = await extractTextFromPDF(base64);
+          newJDs.push({
+            id: `${Date.now()}-${i}`,
+            source: 'PDF Batch',
+            title: fileList[i].name.replace('.pdf', ''),
+            description: text
+          });
+        }
+        setJdLibrary(prev => [...newJDs, ...prev]);
+        setShowJDLibrary(true);
+      }
     } catch (err) {
-      setError("Failed to extract signals from JD PDF.");
+      setError("Failed to read the PDF file.");
     } finally {
       setLoading(false);
       if (event.target) event.target.value = '';
     }
   };
 
-  const handleDownloadTemplate = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(profile, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `${profile.name.replace(/\s+/g, '_')}_Career_Profile.json`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  };
-
-  const handleDownloadPitchPDF = () => {
-    const doc = new jsPDF();
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const contentWidth = pageWidth - (margin * 2);
-    let y = 30;
-
-    doc.setFillColor(15, 23, 42); 
-    doc.rect(0, 0, pageWidth, 50, 'F');
-    
-    doc.setFontSize(28);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text("BLKDMND CAREER ENGINE", margin, y);
-    y += 10;
-    
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(236, 157, 52); // Gold color #ec9d34
-    doc.text("Precision Engineering for High-Stakes Professional Narrative", margin, y);
-    y = 65;
-
-    const addSection = (title: string, body: string, highlight: boolean = false) => {
-      if (highlight) {
-        doc.setFillColor(241, 245, 249);
-        doc.rect(margin - 5, y - 5, contentWidth + 10, 35, 'F');
-      }
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(15, 23, 42);
-      doc.text(title.toUpperCase(), margin, y);
-      y += 8;
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(51, 65, 85);
-      const lines = doc.splitTextToSize(body, contentWidth);
-      doc.text(lines, margin, y);
-      y += (lines.length * 6) + 12;
-    };
-
-    addSection("The Problem", "Static applications fail in a dynamic market. Expertise must be semantically aligned with recruiter and AI expectations.");
-    addSection("The Solution", "BLKDMND is an AI-orchestrated translation layer that recalibrates professional brand signals for 100% narrative resonance.");
-    addSection("Core Capabilities", "• Semantic Mapping: Technical history to recruiter pain points.\n• High Velocity: Optimized assets in seconds.\n• Brand Consistency: Unified voice across all channels.", true);
-
-    y = doc.internal.pageSize.getHeight() - 30;
-    doc.setDrawColor(226, 232, 240);
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 10;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(100, 116, 139);
-    doc.text("DOMINATE THE NARRATIVE. SECURE THE ROLE.", (pageWidth / 2), y, { align: 'center' });
-    doc.save("BLKDMND_Engine_Pitch.pdf");
-  };
-
   const handleDownloadResumePDF = () => {
     if (!result) return;
-    const doc = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: 'a4',
-      putOnlyUsedFonts: true
-    });
-
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    doc.setTextColor(0, 0, 0);
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
     const contentWidth = pageWidth - (margin * 2);
     let yPos = 20;
 
-    // Standard high-contrast ATS settings
-    const fontPrimary = "helvetica";
-    const textBlack = [0, 0, 0] as [number, number, number];
-
-    const checkPageBreak = (needed: number) => {
-      if (yPos + needed > pageHeight - 15) {
-        doc.addPage();
-        yPos = 20;
-        return true;
-      }
-      return false;
-    };
-
-    const addText = (text: string, size = 10, isBold = false) => {
-      doc.setFont(fontPrimary, isBold ? "bold" : "normal");
+    const addText = (text: string, size = 10, isBold = false, spacing = 5) => {
+      doc.setFont("helvetica", isBold ? "bold" : "normal");
       doc.setFontSize(size);
-      doc.setTextColor(textBlack[0], textBlack[1], textBlack[2]);
       const lines = doc.splitTextToSize(text, contentWidth);
       lines.forEach((line: string) => {
-        checkPageBreak(size * 0.5);
+        if (yPos > pageHeight - 15) { doc.addPage(); yPos = 20; }
         doc.text(line, margin, yPos);
-        yPos += size * 0.45;
+        yPos += spacing;
       });
-      yPos += 2;
+      yPos += 1;
     };
 
-    const addHeaderSection = (title: string) => {
-      checkPageBreak(12);
+    const addHeading = (title: string) => {
       yPos += 4;
-      doc.setFont(fontPrimary, "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(textBlack[0], textBlack[1], textBlack[2]);
+      doc.setFont("helvetica", "bold").setFontSize(11);
       doc.text(title.toUpperCase(), margin, yPos);
-      yPos += 2;
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(0.3);
-      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 1.5;
+      doc.setDrawColor(0).line(margin, yPos, pageWidth - margin, yPos);
       yPos += 6;
     };
 
-    // 1. Identification Header
-    doc.setFont(fontPrimary, "bold");
-    doc.setFontSize(18);
-    const nameStr = profile.name.toUpperCase();
-    const nameWidth = doc.getTextWidth(nameStr);
-    doc.text(nameStr, (pageWidth - nameWidth) / 2, yPos);
+    // Header - ATS Compliant (Single column, clearly stacked)
+    doc.setFont("helvetica", "bold").setFontSize(18);
+    const n = profile.name.toUpperCase();
+    doc.text(n, margin, yPos);
     yPos += 8;
 
-    doc.setFont(fontPrimary, "normal");
-    doc.setFontSize(10);
-    const contactInfo = `${profile.location}${profile.email ? ' | ' + profile.email : ''}${profile.linkedin ? ' | ' + profile.linkedin : ''}${profile.github ? ' | ' + profile.github : ''}`;
-    const contactWidth = doc.getTextWidth(contactInfo);
-    doc.text(contactInfo, (pageWidth - contactWidth) / 2, yPos);
+    doc.setFont("helvetica", "normal").setFontSize(10);
+    const contactParts = [
+      profile.location, 
+      profile.phone,
+      profile.email, 
+      profile.linkedin, 
+      profile.github,
+      profile.portfolio_name
+    ].filter(Boolean);
+    const contactLine = contactParts.join(" | ");
+    doc.text(contactLine, margin, yPos);
     yPos += 12;
 
-    doc.setFont(fontPrimary, "bold");
-    doc.setFontSize(12);
-    const targetTitle = result.resume_target_title.toUpperCase();
-    const titleWidth = doc.getTextWidth(targetTitle);
-    doc.text(targetTitle, (pageWidth - titleWidth) / 2, yPos);
-    yPos += 10;
+    // Professional Summary
+    addHeading("Professional Summary");
+    addText(result.resume_professional_summary, 10, false, 5);
 
-    // 2. Summary
-    addHeaderSection("Professional Summary");
-    addText(result.resume_professional_summary);
+    // Skills
+    addHeading("Core Competencies & Technical Skills");
+    addText(profile.core_skills.join(" | "), 10, false, 5);
 
-    // 3. Specialized Experience
-    addHeaderSection("Core Competencies & Impact");
-    const combinedExperience = [...result.resume_role_specific_bullets, ...result.resume_core_bullets];
-    combinedExperience.forEach(item => {
-      doc.setFont(fontPrimary, "normal");
-      doc.setFontSize(10);
-      const lines = doc.splitTextToSize(item, contentWidth - 8);
-      checkPageBreak(lines.length * 5 + 2);
-      doc.text("•", margin, yPos);
-      lines.forEach((line: string) => {
-        doc.text(line, margin + 5, yPos);
-        yPos += 5;
-      });
-      yPos += 1;
+    // Experience Header
+    addHeading("Professional Experience");
+    doc.setFont("helvetica", "bold").setFontSize(11);
+    doc.text(result.resume_target_title || "Target Role", margin, yPos);
+    yPos += 6;
+
+    // Role-specific bullets
+    [...result.resume_role_specific_bullets, ...result.resume_core_bullets].forEach(b => {
+      addText(`• ${b}`, 10, false, 5);
     });
 
-    // 4. Skills & Assets
-    addHeaderSection("Technical Skills & Signature Assets");
-    const skillsText = profile.core_skills.join(", ");
-    addText(skillsText);
+    // Signature Projects (optional but impactful)
+    if (profile.signature_projects && profile.signature_projects.length > 0) {
+      addHeading("Signature Projects & Impact");
+      profile.signature_projects.forEach(p => {
+        addText(`• ${p}`, 10, false, 5);
+      });
+    }
 
-    doc.save(`${profile.name.replace(/\s+/g, '_')}_Resume_Tailored.pdf`);
+    // Education
+    if (profile.education) {
+      addHeading("Education");
+      addText(profile.education, 10, false, 5);
+    }
+
+    // Certifications
+    if (profile.certifications && profile.certifications.length > 0) {
+      addHeading("Certifications");
+      addText(profile.certifications.join(" | "), 10, false, 5);
+    }
+
+    doc.save(`${profile.name.replace(/\s+/g, '_')}_Resume_FastTrack.pdf`);
   };
 
   const handleDownloadCoverLetterPDF = () => {
     if (!result) return;
-    const doc = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    doc.setTextColor(0, 0, 0);
     const margin = 25;
-    const contentWidth = pageWidth - (margin * 2);
+    const contentWidth = doc.internal.pageSize.getWidth() - (margin * 2);
     let yPos = 25;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
+    // Header Info
+    doc.setFont("helvetica", "bold").setFontSize(14);
     doc.text(profile.name.toUpperCase(), margin, yPos);
     yPos += 6;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(profile.location, margin, yPos);
+    doc.setFont("helvetica", "normal").setFontSize(10);
+    doc.text(profile.location || "", margin, yPos);
+    yPos += 5;
+    doc.text(profile.email || "", margin, yPos);
+    yPos += 5;
+    doc.text(profile.phone || "", margin, yPos);
     yPos += 15;
 
+    // Date
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     doc.text(today, margin, yPos);
     yPos += 15;
 
-    doc.text("To the Hiring Team,", margin, yPos);
+    // Recipient Placeholder
+    doc.text("Hiring Manager,", margin, yPos);
     yPos += 10;
 
-    const bodyText = result.cover_letter_body;
-    const lines = doc.splitTextToSize(bodyText, contentWidth);
-    doc.setFontSize(11);
-    lines.forEach((line: string) => {
-      if (yPos > 275) { doc.addPage(); yPos = 25; }
-      doc.text(line, margin, yPos);
-      yPos += 6.5;
+    // Body
+    const lines = doc.splitTextToSize(result.cover_letter_body, contentWidth);
+    lines.forEach((l: string) => { 
+      if (yPos > 270) { doc.addPage(); yPos = 25; }
+      doc.text(l, margin, yPos); 
+      yPos += 6; 
     });
-
+    
     yPos += 10;
     doc.text("Sincerely,", margin, yPos);
-    yPos += 10;
+    yPos += 8;
     doc.setFont("helvetica", "bold");
     doc.text(profile.name, margin, yPos);
 
-    doc.save(`${profile.name.replace(/\s+/g, '_')}_CoverLetter_Tailored.pdf`);
+    doc.save(`${profile.name.replace(/\s+/g, '_')}_CoverLetter_FastTrack.pdf`);
   };
 
   const handleGenerate = async () => {
-    if (!jobDescription.trim()) { setError("Input required: JD signals missing."); return; }
+    if (!jobDescription.trim()) { setError("Please provide a job description."); return; }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -597,7 +703,7 @@ const App: React.FC = () => {
       const data = await generateContent(jobDescription, targetRole, profile);
       setResult(data);
     } catch (err) {
-      setError("Calibrator failure. Verify API connection.");
+      setError("Something went wrong. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -609,333 +715,428 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-primary-500/30 selection:text-white font-sans">
-      {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
+    <div className="min-h-screen theme-transition bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-primary-500/20 selection:text-primary-600">
+      {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} onDownloadSpecs={handleDownloadSystemSpecs} />}
       
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-primary-400 to-primary-600 p-2 rounded-lg shadow-lg">
-              <Cpu className="text-white w-6 h-6" />
+          <div className="flex items-center gap-4">
+            <div className="bg-slate-900 dark:bg-primary-600 p-2.5 rounded-2xl shadow-lg ring-1 ring-black/10 dark:ring-white/10 transition-transform hover:scale-105">
+              <Rocket className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">BLKDMND <span className="text-slate-400 font-light italic">Career Engine</span></h1>
-              <p className="text-xs text-slate-500 font-medium">Session Active: {profile.name}</p>
+              <h1 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">FAST TRACK <span className="text-primary-500 font-medium lowercase italic ml-1">by blkdmnd</span></h1>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">{profile.name} • Version 2.1</p>
             </div>
           </div>
-           <div className="flex items-center gap-4">
-            <div className="flex items-center bg-slate-800/50 rounded-lg border border-slate-800 p-1">
-              <button onClick={handleDownloadPitchPDF} className="text-[10px] font-bold text-slate-400 hover:text-primary-400 transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-slate-800">
-                <Rocket size={12} className="text-primary-500" /> Engine Pitch
-              </button>
-              <div className="w-px h-4 bg-slate-700 mx-1"></div>
-              <button onClick={() => setShowOnboarding(true)} className="text-[10px] font-bold text-slate-400 hover:text-primary-400 transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-slate-800">
-                <BookOpen size={12} className="text-primary-500" /> Onboarding
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${process.env.API_KEY ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></span>
-              <span className="text-xs text-slate-500 font-mono hidden sm:block">Calibration {process.env.API_KEY ? 'Synced' : 'Missing Signal'}</span>
-            </div>
+          
+          <div className="flex items-center gap-3">
+             <button 
+                onClick={toggleTheme}
+                className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary-500 hover:border-primary-500/30 transition-all shadow-sm"
+                title="Change Theme"
+             >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+             </button>
+             
+             <button 
+                onClick={() => setShowOnboarding(true)} 
+                className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-primary-500 hover:border-primary-500/30 transition-all shadow-sm"
+             >
+                <Shield size={16} /> Specs
+             </button>
+
+             <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-2 hidden sm:block"></div>
+
+             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <span className={`w-1.5 h-1.5 rounded-full ${process.env.API_KEY ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-red-500'}`}></span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden lg:block">{process.env.API_KEY ? 'Active' : 'Offline'}</span>
+             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {isScanning && (
+          <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-primary-500/20 rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
+               <div className="absolute inset-0 bg-primary-500/[0.02] pointer-events-none"></div>
+               <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                     <div className="p-3 bg-primary-500/10 rounded-2xl animate-pulse">
+                        <Activity className="text-primary-500" size={24} />
+                     </div>
+                     <div>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-widest">Processing Multiple Jobs</h3>
+                        <p className="text-[11px] text-slate-500 font-mono tracking-wider">{scanStatus}</p>
+                     </div>
+                  </div>
+                  <span className="text-2xl font-black text-primary-500 font-mono tracking-tighter">{Math.round(scanProgress)}%</span>
+               </div>
+               <div className="w-full bg-slate-100 dark:bg-slate-800 h-3.5 rounded-full overflow-hidden shadow-inner">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary-600 to-primary-400 transition-all duration-700 ease-in-out shadow-[0_0_20px_rgba(236,157,52,0.4)]"
+                    style={{ width: `${scanProgress}%` }}
+                  />
+               </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-primary-500/10">
-                 <Rocket size={120} />
-              </div>
-              <div className="space-y-6 relative z-10">
+          <div className="lg:col-span-4 space-y-8">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl relative overflow-hidden transition-all">
+              <div className="space-y-8 relative z-10">
                 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      <Settings size={14} /> Profile Bootstrap
+                <div className="space-y-5">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Settings size={14} /> My Profile
                     </label>
-                    {!isEditingProfile && (
-                      <button 
-                        onClick={() => setIsEditingProfile(true)}
-                        className="text-[10px] text-primary-400 hover:text-primary-300 font-bold uppercase flex items-center gap-1 transition-colors"
-                      >
-                        <Edit3 size={10} /> Edit Base Data
-                      </button>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {!isEditingProfile && (
+                        <button onClick={() => { setIsEditingProfile(true); setIsPastingProfile(false); }} className="text-[10px] text-primary-600 dark:text-primary-400 hover:text-primary-500 font-black uppercase tracking-widest flex items-center gap-1.5 transition-colors">
+                          <Edit3 size={12} /> Edit Details
+                        </button>
+                      )}
+                      {!isPastingProfile && !isEditingProfile && (
+                        <button onClick={() => { setIsPastingProfile(true); setIsEditingProfile(false); }} className="text-[10px] text-amber-600 dark:text-amber-400 hover:text-amber-500 font-black uppercase tracking-widest flex items-center gap-1.5 transition-colors">
+                          <Type size={12} /> Paste Bio
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {isEditingProfile ? (
-                    <div className="space-y-4 animate-in fade-in duration-300 bg-slate-950/40 p-4 rounded-lg border border-slate-800">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase">Profile Editor</h4>
-                        <button onClick={() => setIsEditingProfile(false)} className="text-slate-500 hover:text-rose-400">
-                          <X size={14} />
+                    <div className="space-y-5 animate-in fade-in duration-300 bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Profile Editor</h4>
+                        <button onClick={() => setIsEditingProfile(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                          <X size={16} />
                         </button>
                       </div>
-                      
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-slate-500 uppercase font-bold">Full Name</label>
-                          <input value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-primary-500" />
+                      <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><User size={10} /> Full Name</label>
+                          <input value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-slate-500 uppercase font-bold">Roles (CSV)</label>
-                          <textarea value={editForm.roles.join(', ')} onChange={(e) => setEditForm({...editForm, roles: e.target.value.split(',').map(s => s.trim())})} className="w-full h-16 bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-primary-500 resize-none" />
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><MapPin size={10} /> Location</label>
+                          <input value={editForm.location} onChange={(e) => setEditForm({...editForm, location: e.target.value})} placeholder="City, State" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-slate-500 uppercase font-bold">Signature Projects (CSV)</label>
-                          <textarea value={editForm.signature_projects.join(', ')} onChange={(e) => setEditForm({...editForm, signature_projects: e.target.value.split(',').map(s => s.trim())})} className="w-full h-16 bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-primary-500 resize-none" />
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Phone size={10} /> Contact Phone</label>
+                          <input value={editForm.phone || ''} onChange={(e) => setEditForm({...editForm, phone: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Mail size={10} /> Email Address</label>
+                          <input value={editForm.email || ''} onChange={(e) => setEditForm({...editForm, email: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Linkedin size={10} /> LinkedIn URL</label>
+                          <input value={editForm.linkedin || ''} onChange={(e) => setEditForm({...editForm, linkedin: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Github size={10} /> GitHub URL</label>
+                          <input value={editForm.github || ''} onChange={(e) => setEditForm({...editForm, github: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Globe size={10} /> Portfolio URL</label>
+                          <input value={editForm.portfolio_name || ''} onChange={(e) => setEditForm({...editForm, portfolio_name: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Briefcase size={10} /> Roles (comma separated)</label>
+                          <textarea value={editForm.roles.join(', ')} onChange={(e) => setEditForm({...editForm, roles: e.target.value.split(',').map(s => s.trim())})} className="w-full h-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none" />
                         </div>
                       </div>
-
-                      <div className="flex gap-2 pt-2">
-                        <button onClick={handleProfileSave} className="flex-1 bg-primary-600 hover:bg-primary-500 text-white text-[10px] font-bold py-2 rounded flex items-center justify-center gap-1 shadow-lg transition-all active:scale-95">
-                          <Save size={12} /> Sync Changes
-                        </button>
-                        <button onClick={() => setIsEditingProfile(false)} className="px-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] font-bold py-2 rounded transition-all">
-                          Discard
+                      <div className="flex gap-3 pt-2">
+                        <button onClick={handleProfileSave} className="flex-1 bg-slate-900 dark:bg-primary-600 hover:bg-slate-800 dark:hover:bg-primary-500 text-white text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
+                          <Save size={14} /> Save Profile
                         </button>
                       </div>
+                    </div>
+                  ) : isPastingProfile ? (
+                    <div className="space-y-5 animate-in fade-in duration-300 bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bio/Resume Text Ingestion</h4>
+                        <button onClick={() => setIsPastingProfile(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">Paste your full resume or a detailed bio. Our engine will intelligently extract your details.</p>
+                      <textarea 
+                        value={profilePasteText} 
+                        onChange={(e) => setProfilePasteText(e.target.value)} 
+                        placeholder="Paste resume text or bio here..." 
+                        className="w-full h-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-700 dark:text-slate-300 outline-none focus:border-primary-500 transition-all resize-none scrollbar-thin"
+                      />
+                      <button 
+                        onClick={handleProfilePasteSync} 
+                        disabled={loading || !profilePasteText.trim()}
+                        className="w-full bg-amber-600 hover:bg-amber-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white font-black uppercase tracking-widest py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95"
+                      >
+                        {loading ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />} 
+                        {loading ? 'Analyzing...' : 'Parse & Sync Profile'}
+                      </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="relative group">
-                        <button onClick={() => fileInputRef.current?.click()} className={`w-full flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-xs font-bold text-white transition-all shadow-xl active:scale-95 ring-1 ${uploadSuccess ? 'bg-emerald-600 ring-emerald-400/40' : 'bg-slate-800 hover:bg-slate-700 ring-white/10'}`}>
-                          {uploadSuccess ? <ShieldCheck size={16} /> : <FileUp size={16} />}
-                          {uploadSuccess ? 'Resume Sync Active' : 'Import Resume (PDF)'}
-                        </button>
-                        {uploadSuccess && (
-                          <div className="absolute -top-1 -right-1 bg-emerald-500 text-white p-1 rounded-full shadow-lg animate-bounce">
-                             <Check size={10} strokeWidth={4} />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {uploadSuccess && (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-900/20 border border-emerald-800/50 rounded-lg animate-in fade-in slide-in-from-top-1 duration-300">
-                           <div className="p-1 rounded bg-emerald-500/20">
-                              <ShieldCheck size={12} className="text-emerald-400" />
-                           </div>
-                           <p className="text-[10px] text-emerald-400 font-bold truncate">
-                             Signals extracted from <span className="text-white">{uploadSuccess}</span>
-                           </p>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-2 mt-1">
-                        <button onClick={handleDownloadTemplate} className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium transition-colors">
-                          <Download size={14} /> Export
-                        </button>
-                        <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-medium transition-colors">
-                          <FileCode size={14} /> Import
-                        </button>
-                      </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      <button onClick={() => fileInputRef.current?.click()} className={`w-full group flex items-center justify-center gap-3 px-5 py-4 rounded-2xl text-xs font-bold transition-all shadow-lg active:scale-95 border ${uploadSuccess ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                        {uploadSuccess ? <ShieldCheck size={18} /> : <FileUp size={18} className="group-hover:translate-y-[-2px] transition-transform" />}
+                        {uploadSuccess ? uploadSuccess : 'Sync New Resume (PDF/JSON)'}
+                      </button>
                       <input type="file" ref={fileInputRef} onChange={handleProfileUpload} accept=".pdf,.json" className="hidden" />
-                      <p className="text-[10px] text-slate-600 text-center font-mono">Profile state persisted to localStorage</p>
+                      <p className="text-[9px] text-slate-400 dark:text-slate-600 text-center font-mono uppercase tracking-widest">Encrypted Local Engine</p>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-slate-800">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      <Database size={14} /> JD Library
+                <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Database size={14} /> My Jobs Library
                     </label>
-                    <button onClick={() => setShowJDLibrary(!showJDLibrary)} className="text-[10px] text-primary-400 hover:text-primary-300 font-bold uppercase flex items-center gap-1 transition-all">
-                      {showJDLibrary ? 'Collapse' : 'Manage Data'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {showJDLibrary && jdLibrary.length > 0 && (
+                        <button 
+                          onClick={handleClearAllLibrary} 
+                          className="text-[10px] text-rose-600 dark:text-rose-400 hover:text-rose-500 font-black uppercase tracking-widest flex items-center gap-1.5 transition-all"
+                          title="Delete all jobs"
+                        >
+                          <Trash2 size={12} /> Clear All
+                        </button>
+                      )}
+                      <button onClick={() => setShowJDLibrary(!showJDLibrary)} className="text-[10px] text-primary-600 dark:text-primary-400 hover:text-primary-500 font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
+                        {showJDLibrary ? 'Hide' : 'Show Library'}
+                      </button>
+                    </div>
                   </div>
                   {showJDLibrary && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="relative group">
-                         <input 
-                           type="text" 
-                           placeholder="Search library..." 
-                           value={searchTerm} 
-                           onChange={(e) => setSearchTerm(e.target.value)}
-                           className="w-full bg-slate-950 border border-slate-800 rounded px-8 py-1.5 text-[10px] text-slate-300 outline-none focus:border-primary-500"
-                         />
-                         <Search size={10} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600" />
-                      </div>
-                      <div className="bg-slate-950/80 rounded-lg border border-slate-800 p-2 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
-                        {filteredJDs.map((jd) => (
-                          <div key={jd.id} className="relative group mb-1">
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 p-2.5 max-h-64 overflow-y-auto ring-1 ring-black/[0.02]">
+                        {filteredJDs.length > 0 ? filteredJDs.map((jd) => (
+                          <div key={jd.id} className="relative group mb-1.5 last:mb-0">
                             <button 
-                              onClick={() => { setJobDescription(jd.description); setTargetRole(jd.title); setShowJDLibrary(false); }} 
-                              className="w-full text-left px-3 py-2 pr-10 rounded border border-transparent hover:border-slate-700 hover:bg-slate-900 transition-all flex flex-col"
+                              onClick={() => { setJobDescription(jd.description); setTargetRole(jd.title); if (jd.tailored_content) setResult(jd.tailored_content); setShowJDLibrary(false); setInputMode('single'); }} 
+                              className="w-full text-left px-4 py-3 pr-10 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900/50 hover:shadow-md transition-all flex flex-col group"
                             >
-                              <div className="text-xs font-bold text-slate-200 group-hover:text-primary-400 line-clamp-1">{jd.title}</div>
-                              <div className="text-[9px] text-slate-600 uppercase tracking-tighter mt-0.5">{jd.source}</div>
+                              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary-600 dark:group-hover:text-primary-400 line-clamp-1 transition-colors">{jd.title}</div>
+                              {jd.tailored_content && <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase mt-1">Ready: {jd.tailored_content.match_score}% Match</div>}
                             </button>
-                            <button 
-                              onClick={(e) => handleDeleteJDFromLibrary(jd.id, e)}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-800 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Trash2 size={12} />
+                            <button onClick={(e) => handleDeleteJDFromLibrary(jd.id, e)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-300 dark:text-slate-700 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
+                              <Trash2 size={14} />
                             </button>
                           </div>
-                        ))}
-                        {filteredJDs.length === 0 && (
-                          <p className="text-[10px] text-slate-600 text-center py-4 italic">No matching records.</p>
+                        )) : (
+                          <div className="py-8 text-center">
+                            <Database size={24} className="mx-auto text-slate-200 dark:text-slate-800 mb-2" />
+                            <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Library is Empty</p>
+                          </div>
                         )}
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-slate-800">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <Briefcase size={14} /> Target Strategy
-                  </label>
-                  <input list="role-suggestions" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. Creative Producer" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-sm text-white outline-none focus:ring-1 focus:ring-primary-500 hover:border-slate-600 transition-colors" />
-                  <datalist id="role-suggestions">{profile.roles.map((r, i) => <option key={i} value={r} />)}</datalist>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      <FileText size={14} /> Job Description
-                    </label>
-                    <div className="flex gap-2">
+                <div className="space-y-5 pt-3 border-t border-slate-100 dark:border-slate-800">
+                   <div className="flex p-1.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner">
                       <button 
-                        onClick={handleSaveCurrentJDToLibrary}
-                        disabled={!jobDescription.trim() || !targetRole.trim()}
-                        className="text-[10px] text-emerald-400 hover:text-emerald-300 disabled:text-slate-800 uppercase font-bold tracking-tighter transition-colors flex items-center gap-1"
+                        onClick={() => setInputMode('single')}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${inputMode === 'single' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/5' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
                       >
-                        <BookmarkPlus size={10} /> Save Lib
+                        Single Job
                       </button>
-                      <button onClick={() => jdPdfInputRef.current?.click()} className="text-[10px] text-primary-400 hover:text-primary-300 uppercase font-bold tracking-tighter transition-colors flex items-center gap-1">
-                        <Upload size={10} /> PDF
+                      <button 
+                        onClick={() => setInputMode('bulk')}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${inputMode === 'bulk' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/5' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                      >
+                        Multiple Jobs
                       </button>
-                      <button onClick={() => setJobDescription('')} className="text-[10px] text-slate-500 hover:text-rose-400 uppercase font-bold tracking-tighter transition-colors flex items-center gap-1">
-                        <Trash2 size={10} /> Reset
-                      </button>
-                    </div>
-                  </div>
-                  <input type="file" ref={jdPdfInputRef} onChange={handleJDPDFUpload} accept=".pdf" className="hidden" />
-                  <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} placeholder="Paste JD signals or upload PDF..." className="w-full h-72 bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs font-mono text-slate-300 outline-none resize-none focus:ring-1 focus:ring-primary-500 scrollbar-thin scrollbar-thumb-slate-800 transition-colors hover:border-slate-600" />
+                   </div>
+
+                   {inputMode === 'single' ? (
+                     <div className="space-y-6 animate-in slide-in-from-left-4 duration-500">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <Briefcase size={14} /> Target Job Title
+                          </label>
+                          <input list="role-suggestions" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. AI Solutions Engineer" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-3.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all hover:border-slate-300 dark:hover:border-slate-700" />
+                          <datalist id="role-suggestions">{profile.roles.map((r, i) => <option key={i} value={r} />)}</datalist>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                              <FileText size={14} /> Job Description
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <button 
+                                onClick={() => { setJobDescription(''); setResult(null); }} 
+                                className="text-[10px] text-rose-600 dark:text-rose-400 hover:text-rose-500 uppercase font-black tracking-widest flex items-center gap-1.5 transition-colors"
+                                title="Clear text"
+                              >
+                                <Eraser size={12} /> Clear
+                              </button>
+                              <button onClick={() => jdPdfInputRef.current?.click()} className="text-[10px] text-primary-600 dark:text-primary-400 hover:text-primary-500 uppercase font-black tracking-widest flex items-center gap-1.5 transition-colors">
+                                <Upload size={12} /> Scan PDF
+                              </button>
+                            </div>
+                          </div>
+                          <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} placeholder="Paste the job description here..." className="w-full h-80 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 text-xs font-mono text-slate-700 dark:text-slate-300 outline-none resize-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all hover:border-slate-300 dark:hover:border-slate-700 scrollbar-thin" />
+                        </div>
+                        <button onClick={handleGenerate} disabled={loading || !jobDescription.trim()} className="w-full bg-slate-900 dark:bg-primary-600 hover:bg-slate-800 dark:hover:bg-primary-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 group">
+                          {loading ? <><Loader2 className="animate-spin" size={20} /> Tailoring...</> : <><Sparkles size={20} className="group-hover:animate-pulse" /> Tailor My Assets</>}
+                        </button>
+                     </div>
+                   ) : (
+                     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                        <div className="grid grid-cols-2 gap-3 max-h-[500px] overflow-y-auto p-1.5">
+                           {bulkInputs.map((text, idx) => (
+                             <div key={idx} className="space-y-1.5">
+                                <label className="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-widest">Job #{idx + 1}</label>
+                                <textarea 
+                                  value={text} 
+                                  onChange={(e) => {
+                                    const next = [...bulkInputs];
+                                    next[idx] = e.target.value;
+                                    setBulkInputs(next);
+                                  }}
+                                  placeholder={`Paste description...`}
+                                  className="w-full h-24 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-[10px] text-slate-600 dark:text-slate-300 outline-none focus:border-primary-500 transition-all resize-none"
+                                />
+                             </div>
+                           ))}
+                        </div>
+                        <button 
+                          onClick={handleBulkScan} 
+                          disabled={isScanning || bulkInputs.every(t => !t.trim())}
+                          className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-100 dark:disabled:bg-slate-800 text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl"
+                        >
+                          {isScanning ? <><Loader2 className="animate-spin" size={20} /> Analyzing...</> : <><Layers size={20} /> Analyze All Jobs</>}
+                        </button>
+                     </div>
+                   )}
                 </div>
 
-                <button onClick={handleGenerate} disabled={loading || !jobDescription.trim()} className="w-full bg-primary-600 hover:bg-primary-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-primary-500/20 active:scale-95 group">
-                  {loading ? <><Loader2 className="animate-spin" size={18} /> Engine Processing...</> : <><Sparkles size={18} className="group-hover:animate-pulse" /> Calibrate Narrative</>}
-                </button>
-                {error && <div className="p-3 bg-rose-950/30 border border-rose-900/50 rounded-lg text-rose-400 text-[10px] text-center font-bold tracking-tight">{error}</div>}
+                <input type="file" ref={jdPdfInputRef} onChange={handleJDPDFUpload} accept=".pdf" multiple className="hidden" />
+                {error && <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-2xl text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"><AlertCircle size={14} /> {error}</div>}
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-8">
-            {!result && !loading && (
-              <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-800 rounded-2xl min-h-[600px] bg-slate-900/10">
-                <div className="p-8 bg-slate-900 rounded-full mb-6 ring-1 ring-slate-800 shadow-2xl relative">
-                  <Film size={64} className="text-primary-500/30" />
-                  <div className="absolute inset-0 border-2 border-primary-500/20 rounded-full animate-ping pointer-events-none"></div>
+            {!result && !loading && !isScanning && (
+              <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl min-h-[600px] bg-slate-50/30 dark:bg-slate-900/10 group">
+                <div className="p-10 bg-white dark:bg-slate-900 rounded-full mb-8 ring-1 ring-slate-100 dark:ring-slate-800 shadow-2xl relative transition-transform group-hover:scale-110">
+                  <Cpu size={64} className="text-slate-200 dark:text-primary-500/20" />
+                  <div className="absolute inset-0 border-2 border-primary-500/20 rounded-full animate-ping pointer-events-none opacity-0 group-hover:opacity-100"></div>
                 </div>
-                <h3 className="text-slate-300 font-bold uppercase tracking-[0.2em] text-sm">System Ready</h3>
-                <p className="text-xs mt-3 text-slate-500 max-w-xs text-center leading-relaxed">Engine synchronized for <b>{profile.name}</b>. Insert Job Description signals to initiate semantic calibration.</p>
-                <button onClick={() => setShowOnboarding(true)} className="mt-6 flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-primary-400 border border-slate-700 rounded-xl text-xs font-bold transition-all">
-                  <HelpCircle size={14} /> Need Help Getting Started?
-                </button>
+                <h3 className="text-slate-400 dark:text-slate-300 font-black uppercase tracking-[0.4em] text-sm">System Ready</h3>
+                <p className="text-xs mt-4 text-slate-500 dark:text-slate-500 max-w-xs text-center leading-relaxed font-medium">Fast Track is synchronized for <b>{profile.name}</b>. Paste a job description to get started.</p>
               </div>
             )}
             
             {loading && (
-              <div className="h-full flex flex-col items-center justify-center min-h-[600px] space-y-8">
+              <div className="h-full flex flex-col items-center justify-center min-h-[600px] space-y-10">
                  <div className="relative">
-                    <div className="w-24 h-24 border-4 border-slate-900 border-t-primary-500 rounded-full animate-spin"></div>
+                    <div className="w-28 h-28 border-[6px] border-slate-100 dark:border-slate-900 border-t-primary-500 rounded-full animate-spin"></div>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                       <Rocket size={40} className="text-primary-500 animate-bounce" />
+                       <Zap size={44} className="text-primary-500 animate-pulse" />
                     </div>
                  </div>
-                 <div className="text-center space-y-2">
-                    <p className="text-slate-200 font-bold text-lg tracking-tight">Extracting High-Value Signals</p>
-                    <p className="text-slate-500 text-xs font-mono uppercase tracking-widest animate-pulse">Running semantic cross-reference engine...</p>
+                 <div className="text-center space-y-3">
+                    <p className="text-slate-900 dark:text-white font-black text-xl tracking-tighter uppercase">Tailoring Content</p>
+                    <div className="flex items-center justify-center gap-2">
+                       <span className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-pulse"></span>
+                       <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Connecting your profile to the job...</p>
+                    </div>
                  </div>
               </div>
             )}
 
             {result && !loading && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 <MatchMeter 
                   score={result.match_score} 
                   explanation={result.match_explanation}
                   userName={profile.name} 
                 />
 
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-2xl ring-1 ring-white/5">
-                  <div className="flex items-center gap-5">
-                    <div className="p-4 bg-slate-800 rounded-2xl text-primary-400 shadow-inner ring-1 ring-white/10">
-                      <Share2 size={28} />
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 flex flex-col sm:flex-row gap-8 items-center justify-between shadow-2xl ring-1 ring-black/5 dark:ring-white/5 relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-primary-500"></div>
+                  <div className="flex items-center gap-6">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-primary-500 shadow-inner ring-1 ring-black/5 dark:ring-white/5 group-hover:scale-110 transition-transform">
+                      <Share2 size={32} />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-white tracking-tight">Deployment Assets</h3>
-                      <p className="text-[11px] text-slate-500 uppercase font-bold tracking-[0.1em]">Engine optimized for {targetRole}</p>
+                      <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Tailored Results</h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest">Optimized Assets for {targetRole}</p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-3 w-full sm:w-auto">
-                    <button onClick={handleDownloadResumePDF} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 transition-all active:scale-95 shadow-lg group">
-                      <User size={18} className="text-emerald-400 group-hover:scale-110 transition-transform" /> Resume.pdf
+                  <div className="flex flex-wrap gap-4 w-full sm:w-auto">
+                    <button onClick={handleDownloadResumePDF} className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-6 py-3.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black text-slate-800 dark:text-slate-200 transition-all active:scale-95 shadow-lg group/btn">
+                      <FileUp size={18} className="text-emerald-500 group-hover/btn:rotate-12 transition-transform" /> Resume.pdf
                     </button>
-                    <button onClick={handleDownloadCoverLetterPDF} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-bold transition-all shadow-xl hover:shadow-primary-500/40 active:scale-95 group">
-                      <Mail size={18} className="group-hover:animate-pulse" /> Cover_Letter.pdf
+                    <button onClick={handleDownloadCoverLetterPDF} className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-7 py-3.5 bg-slate-900 dark:bg-primary-600 hover:bg-slate-800 dark:hover:bg-primary-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 group/btn">
+                      <Mail size={18} className="group-hover/btn:translate-y-[-2px] transition-transform" /> Letter.pdf
+                    </button>
+                    <button onClick={handleSaveCurrentJDToLibrary} className="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-400 hover:text-primary-500 transition-all active:scale-95" title="Save this job">
+                      <BookmarkPlus size={20} />
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-12">
-                  <section className="space-y-6">
-                    <div className="flex items-center gap-4 text-primary-400 pb-3 border-b border-slate-800/50">
-                      <div className="p-2 rounded-lg bg-primary-500/10">
-                        <FileText size={20} />
+                <div className="grid grid-cols-1 gap-14">
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                      <div className="p-3 rounded-2xl bg-primary-500/10">
+                        <FileText className="text-primary-500" size={24} />
                       </div>
-                      <h2 className="text-lg font-black text-white uppercase tracking-widest">Resume Strategy</h2>
+                      <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Tailored Resume</h2>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <ResultCard title="Narrative Thesis" content={result.resume_professional_summary} className="md:col-span-2 border-primary-500/10 bg-primary-500/[0.02]" />
-                      <ResultCard title="Target Impact" content={result.resume_role_specific_bullets} />
-                      <ResultCard title="Core Operations" content={result.resume_core_bullets} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <ResultCard title="Professional Summary" content={result.resume_professional_summary} className="md:col-span-2 border-primary-500/10 bg-primary-500/[0.01]" />
+                      <ResultCard title="Role-Specific Impact" content={result.resume_role_specific_bullets} description="Target-specific achievements" />
+                      <ResultCard title="Core Experience" content={result.resume_core_bullets} description="Your fundamental history" />
                     </div>
                   </section>
 
-                  <section className="space-y-6">
-                    <div className="flex items-center gap-4 text-primary-400 pb-3 border-b border-slate-800/50">
-                      <div className="p-2 rounded-lg bg-primary-500/10">
-                        <MessageSquare size={20} />
+                  <section className="space-y-8">
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-5">
+                        <div className="p-3 rounded-2xl bg-emerald-500/10">
+                          <BrainCircuit className="text-emerald-500" size={24} />
+                        </div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Interview Prep</h2>
                       </div>
-                      <h2 className="text-lg font-black text-white uppercase tracking-widest">Interview Intelligence</h2>
+                      <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-full">
+                         <Zap size={12} className="text-amber-500 animate-pulse" />
+                         <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-[0.2em]">System Checks Passed</span>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <ResultCard 
-                        title="Recruiter Talking Points" 
-                        content={result.interview_bullets} 
-                        description="Key signals for phone screens and technical rounds"
-                      />
-                      <ResultCard 
-                        title="Interview Study Tips" 
-                        content={result.interview_prep_tips} 
-                        description="Strategic areas to review before the meeting"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <ResultCard title="Key Talking Points" content={result.interview_bullets} className="border-emerald-500/10 bg-emerald-500/[0.01]" />
+                      <ResultCard title="Strategic Study Tips" content={result.interview_prep_tips} className="border-emerald-500/10 bg-emerald-500/[0.01]" />
                     </div>
                   </section>
 
-                  <section className="space-y-6">
-                    <div className="flex items-center gap-4 text-primary-400 pb-3 border-b border-slate-800/50">
-                      <div className="p-2 rounded-lg bg-primary-500/10">
-                        <Linkedin size={20} />
+                  <section className="space-y-8">
+                    <div className="flex items-center gap-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                      <div className="p-3 rounded-2xl bg-blue-500/10">
+                        <Linkedin className="text-blue-500" size={24} />
                       </div>
-                      <h2 className="text-lg font-black text-white uppercase tracking-widest">Digital Presence</h2>
+                      <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Online Presence</h2>
                     </div>
-                    <div className="grid grid-cols-1 gap-6">
-                      <ResultCard title="Headline Optimization" content={result.linkedin_headline} />
-                      <ResultCard title="Brand 'About' Narrative" content={result.linkedin_about_section} />
+                    <div className="grid grid-cols-1 gap-8">
+                      <ResultCard title="LinkedIn Headline" content={result.linkedin_headline} description="Maximum profile impact" />
+                      <ResultCard title="LinkedIn 'About' Section" content={result.linkedin_about_section} />
+                      <ResultCard title="Message for Recruiter" content={result.recruiter_dm} description="Direct response outreach" />
                     </div>
                   </section>
                 </div>
 
-                <footer className="pt-8 pb-4 text-center border-t border-slate-900">
-                   <p className="text-[10px] text-slate-700 font-bold uppercase tracking-[0.4em]">Proprietary Calibration Protocol • BLKDMND Digital</p>
+                <footer className="pt-12 pb-10 text-center border-t border-slate-100 dark:border-slate-900">
+                   <p className="text-[10px] text-slate-400 dark:text-slate-600 font-black uppercase tracking-[0.6em] transition-colors hover:text-primary-500">Fast Track Calibration Protocol v2.1 • Powered by BLKDMND Digital</p>
                 </footer>
               </div>
             )}

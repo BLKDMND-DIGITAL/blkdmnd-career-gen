@@ -1,0 +1,34 @@
+
+{
+  "project_name": "Fast Track: AI Career Engine",
+  "developer": "BLKDMND Digital",
+  "version": "2.1",
+  "description": "A high-performance career assistant that uses Gemini-3-Flash to map candidate profiles to job descriptions, generating ATS-optimized resumes and LinkedIn content.",
+  "tech_stack": {
+    "framework": "React 19 (ES6 Modules)",
+    "styling": "Tailwind CSS (JIT)",
+    "ai_engine": "Google Gemini-3-Flash-Preview",
+    "pdf_library": "jsPDF (Client-side generation)",
+    "icons": "Lucide React"
+  },
+  "key_features": [
+    "ATS-Compliant PDF Generation",
+    "Bulk Job Description Scanning (up to 10 at once)",
+    "Automated LinkedIn Profile Optimization",
+    "Intelligent Match Scoring & Gap Analysis",
+    "Text/PDF Resume Parsing for Profile Setup"
+  ],
+  "runtime_requirements": {
+    "api_key_required": true,
+    "environment_variable": "process.env.API_KEY",
+    "permissions": ["local_storage"]
+  },
+  "file_structure": {
+    "entry": "index.tsx",
+    "main_logic": "App.tsx",
+    "ai_service": "services/gemini.ts",
+    "configurations": "constants.ts",
+    "types": "types.ts"
+  },
+  "demo_usage_instructions": "To run this demo, ensure your hosting environment injects a valid Google Gemini API Key. The application stores user data locally in the browser to maintain privacy. Users can upload their own resumes or use the pre-loaded 'Greg Dukes' profile for immediate testing."
+}
