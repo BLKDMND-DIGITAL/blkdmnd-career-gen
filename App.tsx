@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { jsPDF } from 'jspdf';
-import { TargetRole, TailoredContent, CandidateProfile } from './types';
+import { TargetRole, TailoredContent, CandidateProfile, WorkExperience } from './types';
 import { generateContent, parseResumePDF, extractTextFromPDF, parseResumeText } from './services/gemini';
 import { DEFAULT_PROFILE, MEDIA_PRODUCTION_JDS } from './constants';
 import { ResultCard } from './components/ResultCard';
@@ -65,7 +65,8 @@ import {
   Globe,
   MapPin,
   Phone,
-  Type
+  Type,
+  Calendar
 } from 'lucide-react';
 
 const OnboardingModal: React.FC<{ onClose: () => void; onDownloadSpecs: () => void }> = ({ onClose, onDownloadSpecs }) => {
@@ -289,6 +290,7 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showDates, setShowDates] = useState(false);
   
   const [inputMode, setInputMode] = useState<'single' | 'bulk'>('single');
   const [bulkInputs, setBulkInputs] = useState<string[]>(new Array(10).fill(''));
@@ -587,7 +589,7 @@ const App: React.FC = () => {
       yPos += 6;
     };
 
-    // Header - ATS Compliant (Single column, clearly stacked)
+    // Header
     doc.setFont("helvetica", "bold").setFontSize(18);
     const n = profile.name.toUpperCase();
     doc.text(n, margin, yPos);
@@ -599,8 +601,7 @@ const App: React.FC = () => {
       profile.phone,
       profile.email, 
       profile.linkedin, 
-      profile.github,
-      profile.portfolio_name
+      profile.github
     ].filter(Boolean);
     const contactLine = contactParts.join(" | ");
     doc.text(contactLine, margin, yPos);
@@ -614,18 +615,50 @@ const App: React.FC = () => {
     addHeading("Core Competencies & Technical Skills");
     addText(profile.core_skills.join(" | "), 10, false, 5);
 
-    // Experience Header
+    // Experience
     addHeading("Professional Experience");
-    doc.setFont("helvetica", "bold").setFontSize(11);
-    doc.text(result.resume_target_title || "Target Role", margin, yPos);
-    yPos += 6;
+    
+    // If we have structured experience with dates, list it chronologically
+    if (profile.experience && profile.experience.length > 0) {
+      profile.experience.forEach((exp, idx) => {
+        if (yPos > pageHeight - 30) { doc.addPage(); yPos = 20; }
+        
+        doc.setFont("helvetica", "bold").setFontSize(11);
+        doc.text(exp.role, margin, yPos);
+        
+        if (showDates) {
+          doc.setFont("helvetica", "normal").setFontSize(10);
+          const dateRange = `${exp.startDate} - ${exp.endDate}`;
+          const dateWidth = doc.getTextWidth(dateRange);
+          doc.text(dateRange, pageWidth - margin - dateWidth, yPos);
+        }
+        yPos += 5;
+        
+        doc.setFont("helvetica", "italic").setFontSize(10);
+        doc.text(exp.company, margin, yPos);
+        yPos += 6;
+        
+        // Use tailored bullets for the relevant profile experience
+        if (idx === 0) {
+           [...result.resume_role_specific_bullets, ...result.resume_core_bullets].forEach(b => {
+             addText(`• ${b}`, 10, false, 5);
+           });
+        } else {
+           addText(`• ${exp.description}`, 10, false, 5);
+        }
+        yPos += 4;
+      });
+    } else {
+      // Fallback if no structured experience
+      doc.setFont("helvetica", "bold").setFontSize(11);
+      doc.text(result.resume_target_title || "Target Role", margin, yPos);
+      yPos += 6;
+      [...result.resume_role_specific_bullets, ...result.resume_core_bullets].forEach(b => {
+        addText(`• ${b}`, 10, false, 5);
+      });
+    }
 
-    // Role-specific bullets
-    [...result.resume_role_specific_bullets, ...result.resume_core_bullets].forEach(b => {
-      addText(`• ${b}`, 10, false, 5);
-    });
-
-    // Signature Projects (optional but impactful)
+    // Signature Projects
     if (profile.signature_projects && profile.signature_projects.length > 0) {
       addHeading("Signature Projects & Impact");
       profile.signature_projects.forEach(p => {
@@ -645,7 +678,10 @@ const App: React.FC = () => {
       addText(profile.certifications.join(" | "), 10, false, 5);
     }
 
-    doc.save(`${profile.name.replace(/\s+/g, '_')}_Resume_FastTrack.pdf`);
+    const sanitize = (s: string) => s.replace(/[^a-z0-9]/gi, '_');
+    const safeName = sanitize(profile.name);
+    const safeRole = sanitize(targetRole);
+    doc.save(`${safeName}_${safeRole}_Resume.pdf`);
   };
 
   const handleDownloadCoverLetterPDF = () => {
@@ -691,7 +727,10 @@ const App: React.FC = () => {
     doc.setFont("helvetica", "bold");
     doc.text(profile.name, margin, yPos);
 
-    doc.save(`${profile.name.replace(/\s+/g, '_')}_CoverLetter_FastTrack.pdf`);
+    const sanitize = (s: string) => s.replace(/[^a-z0-9]/gi, '_');
+    const safeName = sanitize(profile.name);
+    const safeRole = sanitize(targetRole);
+    doc.save(`${safeName}_${safeRole}_CoverLetter.pdf`);
   };
 
   const handleGenerate = async () => {
@@ -725,8 +764,8 @@ const App: React.FC = () => {
               <Rocket className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">FAST TRACK <span className="text-primary-500 font-medium lowercase italic ml-1">by blkdmnd</span></h1>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">{profile.name} • Version 2.1</p>
+              <h1 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tighter">FAST TRACK</h1>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">{profile.name} • Version 2.2</p>
             </div>
           </div>
           
@@ -835,18 +874,95 @@ const App: React.FC = () => {
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Linkedin size={10} /> LinkedIn URL</label>
-                          <input value={editForm.linkedin || ''} onChange={(e) => setEditForm({...editForm, linkedin: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                          <input value={editForm.linkedin || ''} onChange={(e) => setEditForm({...editForm, linkedin: e.target.value})} placeholder="linkedin.com/in/username" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Github size={10} /> GitHub URL</label>
-                          <input value={editForm.github || ''} onChange={(e) => setEditForm({...editForm, github: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                          <input value={editForm.github || ''} onChange={(e) => setEditForm({...editForm, github: e.target.value})} placeholder="github.com/username" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Globe size={10} /> Portfolio URL</label>
-                          <input value={editForm.portfolio_name || ''} onChange={(e) => setEditForm({...editForm, portfolio_name: e.target.value})} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" />
+                        
+                        <div className="pt-4 space-y-3">
+                           <label className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] flex items-center gap-2">
+                             <Briefcase size={12} /> Work Experience (with dates)
+                           </label>
+                           {editForm.experience?.map((exp, idx) => (
+                             <div key={idx} className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl space-y-3 shadow-sm relative group">
+                                <button 
+                                  onClick={() => {
+                                    const nextExp = [...(editForm.experience || [])];
+                                    nextExp.splice(idx, 1);
+                                    setEditForm({...editForm, experience: nextExp});
+                                  }}
+                                  className="absolute top-2 right-2 p-1 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                                >
+                                  <X size={14} />
+                                </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                   <div className="space-y-1">
+                                      <label className="text-[9px] text-slate-400 uppercase font-bold">Role</label>
+                                      <input 
+                                        value={exp.role} 
+                                        onChange={(e) => {
+                                          const nextExp = [...(editForm.experience || [])];
+                                          nextExp[idx] = {...exp, role: e.target.value};
+                                          setEditForm({...editForm, experience: nextExp});
+                                        }}
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-primary-500" 
+                                      />
+                                   </div>
+                                   <div className="space-y-1">
+                                      <label className="text-[9px] text-slate-400 uppercase font-bold">Company</label>
+                                      <input 
+                                        value={exp.company} 
+                                        onChange={(e) => {
+                                          const nextExp = [...(editForm.experience || [])];
+                                          nextExp[idx] = {...exp, company: e.target.value};
+                                          setEditForm({...editForm, experience: nextExp});
+                                        }}
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-primary-500" 
+                                      />
+                                   </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                   <div className="space-y-1">
+                                      <label className="text-[9px] text-slate-400 uppercase font-bold flex items-center gap-1"><Calendar size={8} /> Start Date</label>
+                                      <input 
+                                        value={exp.startDate} 
+                                        onChange={(e) => {
+                                          const nextExp = [...(editForm.experience || [])];
+                                          nextExp[idx] = {...exp, startDate: e.target.value};
+                                          setEditForm({...editForm, experience: nextExp});
+                                        }}
+                                        placeholder="e.g. Jan 2020"
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-primary-500" 
+                                      />
+                                   </div>
+                                   <div className="space-y-1">
+                                      <label className="text-[9px] text-slate-400 uppercase font-bold flex items-center gap-1"><Calendar size={8} /> End Date</label>
+                                      <input 
+                                        value={exp.endDate} 
+                                        onChange={(e) => {
+                                          const nextExp = [...(editForm.experience || [])];
+                                          nextExp[idx] = {...exp, endDate: e.target.value};
+                                          setEditForm({...editForm, experience: nextExp});
+                                        }}
+                                        placeholder="e.g. Present"
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-primary-500" 
+                                      />
+                                   </div>
+                                </div>
+                             </div>
+                           ))}
+                           <button 
+                             onClick={() => setEditForm({...editForm, experience: [...(editForm.experience || []), {role: '', company: '', startDate: '', endDate: '', description: ''}]})}
+                             className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary-500 hover:border-primary-500 transition-all flex items-center justify-center gap-2"
+                           >
+                             <Plus size={14} /> Add Experience
+                           </button>
                         </div>
+                        
                         <div className="space-y-1.5">
-                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Briefcase size={10} /> Roles (comma separated)</label>
+                          <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider flex items-center gap-1.5"><Briefcase size={10} /> Potential Roles</label>
                           <textarea value={editForm.roles.join(', ')} onChange={(e) => setEditForm({...editForm, roles: e.target.value.split(',').map(s => s.trim())})} className="w-full h-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none" />
                         </div>
                       </div>
@@ -859,12 +975,11 @@ const App: React.FC = () => {
                   ) : isPastingProfile ? (
                     <div className="space-y-5 animate-in fade-in duration-300 bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
                       <div className="flex justify-between items-center">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bio/Resume Text Ingestion</h4>
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bio/Resume Ingestion</h4>
                         <button onClick={() => setIsPastingProfile(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
                           <X size={16} />
                         </button>
                       </div>
-                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">Paste your full resume or a detailed bio. Our engine will intelligently extract your details.</p>
                       <textarea 
                         value={profilePasteText} 
                         onChange={(e) => setProfilePasteText(e.target.value)} 
@@ -984,6 +1099,32 @@ const App: React.FC = () => {
                           </div>
                           <textarea value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} placeholder="Paste the job description here..." className="w-full h-80 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 text-xs font-mono text-slate-700 dark:text-slate-300 outline-none resize-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all hover:border-slate-300 dark:hover:border-slate-700 scrollbar-thin" />
                         </div>
+                        
+                        {/* Prompt Step: Dates Toggle prior to tailoring */}
+                        <div className="p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-inner space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Resume Config</span>
+                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Include Experience Dates?</h4>
+                            </div>
+                            <button 
+                              onClick={() => setShowDates(!showDates)}
+                              className={`relative w-14 h-7 rounded-full transition-all duration-300 outline-none focus:ring-4 focus:ring-primary-500/10 ${showDates ? 'bg-primary-500 shadow-[0_0_15px_rgba(236,157,52,0.3)]' : 'bg-slate-200 dark:bg-slate-700'}`}
+                            >
+                              <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-lg flex items-center justify-center transition-transform duration-300 ease-spring ${showDates ? 'translate-x-7' : 'translate-x-0'}`}>
+                                 {showDates ? <Calendar size={10} className="text-primary-500" /> : <ZapOff size={10} className="text-slate-400" />}
+                              </div>
+                              <div className="absolute inset-0 flex items-center justify-between px-2.5 pointer-events-none">
+                                 <span className={`text-[8px] font-black ${showDates ? 'opacity-0' : 'opacity-100'} text-slate-400 uppercase transition-opacity`}>OFF</span>
+                                 <span className={`text-[8px] font-black ${showDates ? 'opacity-100' : 'opacity-0'} text-white uppercase transition-opacity`}>ON</span>
+                              </div>
+                            </button>
+                          </div>
+                          <p className="text-[9px] text-slate-500 leading-relaxed italic">
+                            * ATS best practices vary; toggling dates {showDates ? "includes" : "excludes"} the timeframe for each role.
+                          </p>
+                        </div>
+
                         <button onClick={handleGenerate} disabled={loading || !jobDescription.trim()} className="w-full bg-slate-900 dark:bg-primary-600 hover:bg-slate-800 dark:hover:bg-primary-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 group">
                           {loading ? <><Loader2 className="animate-spin" size={20} /> Tailoring...</> : <><Sparkles size={20} className="group-hover:animate-pulse" /> Tailor My Assets</>}
                         </button>
@@ -1032,7 +1173,7 @@ const App: React.FC = () => {
                   <div className="absolute inset-0 border-2 border-primary-500/20 rounded-full animate-ping pointer-events-none opacity-0 group-hover:opacity-100"></div>
                 </div>
                 <h3 className="text-slate-400 dark:text-slate-300 font-black uppercase tracking-[0.4em] text-sm">System Ready</h3>
-                <p className="text-xs mt-4 text-slate-500 dark:text-slate-500 max-w-xs text-center leading-relaxed font-medium">Fast Track is synchronized for <b>{profile.name}</b>. Paste a job description to get started.</p>
+                <p className="text-xs mt-4 text-slate-500 dark:text-slate-500 max-w-xs text-center leading-relaxed font-medium">Fast Track is synchronized for <b>{profile.name}</b>. Make your configuration choices and paste a job description.</p>
               </div>
             )}
             
@@ -1048,7 +1189,7 @@ const App: React.FC = () => {
                     <p className="text-slate-900 dark:text-white font-black text-xl tracking-tighter uppercase">Tailoring Content</p>
                     <div className="flex items-center justify-center gap-2">
                        <span className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-pulse"></span>
-                       <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Connecting your profile to the job...</p>
+                       <p className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Gemini 3 Flash Preview Processing...</p>
                     </div>
                  </div>
               </div>
@@ -1068,11 +1209,12 @@ const App: React.FC = () => {
                     <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-primary-500 shadow-inner ring-1 ring-black/5 dark:ring-white/5 group-hover:scale-110 transition-transform">
                       <Share2 size={32} />
                     </div>
-                    <div>
+                    <div className="flex flex-col">
                       <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight uppercase">Tailored Results</h3>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest">Optimized Assets for {targetRole}</p>
                     </div>
                   </div>
+                  
                   <div className="flex flex-wrap gap-4 w-full sm:w-auto">
                     <button onClick={handleDownloadResumePDF} className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-6 py-3.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-black text-slate-800 dark:text-slate-200 transition-all active:scale-95 shadow-lg group/btn">
                       <FileUp size={18} className="text-emerald-500 group-hover/btn:rotate-12 transition-transform" /> Resume.pdf
@@ -1136,7 +1278,7 @@ const App: React.FC = () => {
                 </div>
 
                 <footer className="pt-12 pb-10 text-center border-t border-slate-100 dark:border-slate-900">
-                   <p className="text-[10px] text-slate-400 dark:text-slate-600 font-black uppercase tracking-[0.6em] transition-colors hover:text-primary-500">Fast Track Calibration Protocol v2.1 • Powered by BLKDMND Digital</p>
+                   <p className="text-[10px] text-slate-400 dark:text-slate-600 font-black uppercase tracking-[0.6em] transition-colors hover:text-primary-500">Fast Track Calibration Protocol v2.2</p>
                 </footer>
               </div>
             )}

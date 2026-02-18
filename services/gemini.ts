@@ -53,7 +53,7 @@ const responseSchema = {
   ],
 };
 
-// Updated profileSchema to include all contact fields
+// Updated profileSchema to include all contact fields and structured experience
 const profileSchema = {
   type: Type.OBJECT,
   properties: {
@@ -66,6 +66,20 @@ const profileSchema = {
     portfolio_name: { type: Type.STRING },
     roles: { type: Type.ARRAY, items: { type: Type.STRING } },
     core_skills: { type: Type.ARRAY, items: { type: Type.STRING } },
+    experience: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          company: { type: Type.STRING },
+          role: { type: Type.STRING },
+          startDate: { type: Type.STRING },
+          endDate: { type: Type.STRING },
+          description: { type: Type.STRING }
+        },
+        required: ["company", "role", "startDate", "endDate"]
+      }
+    },
     signature_projects: { type: Type.ARRAY, items: { type: Type.STRING } },
     media_credentials: { type: Type.ARRAY, items: { type: Type.STRING } },
     education: { type: Type.STRING },
@@ -81,7 +95,7 @@ export const parseResumePDF = async (base64Data: string): Promise<CandidateProfi
     contents: {
       parts: [
         { inlineData: { data: base64Data, mimeType: "application/pdf" } },
-        { text: "Extract the career information from this resume and format it into the specified JSON structure. Be precise." }
+        { text: "Extract the career information from this resume and format it into the specified JSON structure. Be precise and include dates for each work experience entry." }
       ]
     },
     config: {
@@ -101,7 +115,7 @@ export const parseResumeText = async (resumeText: string): Promise<CandidateProf
     model: "gemini-3-flash-preview",
     contents: {
       parts: [
-        { text: `Extract the career information from this resume/bio text and format it into the specified JSON structure. Be precise.\n\nTEXT:\n${resumeText}` }
+        { text: `Extract the career information from this resume/bio text and format it into the specified JSON structure. Be precise and include dates for each work experience entry.\n\nTEXT:\n${resumeText}` }
       ]
     },
     config: {

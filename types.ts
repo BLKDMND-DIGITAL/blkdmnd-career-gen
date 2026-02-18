@@ -1,6 +1,14 @@
 
 export type TargetRole = string;
 
+export interface WorkExperience {
+  company: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+}
+
 export interface TailoredContent {
   linkedin_headline: string;
   linkedin_about_section: string;
@@ -30,6 +38,7 @@ export interface CandidateProfile {
   portfolio_name?: string;
   roles: string[];
   core_skills: string[];
+  experience?: WorkExperience[];
   signature_projects: string[];
   media_credentials: string[];
   education: string;

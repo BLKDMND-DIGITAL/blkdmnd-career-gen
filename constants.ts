@@ -6,9 +6,8 @@ export const DEFAULT_PROFILE: CandidateProfile = {
   location: "Charlotte, NC",
   phone: "704-555-0123",
   email: "greg@example.com",
-  github: "github.com/BLKDMND-DIGITAL",
+  github: "github.com/gdukes-dev",
   linkedin: "linkedin.com/in/gregdukes",
-  portfolio_name: "blkdmnd.digital",
   roles: [
     "AI Solutions Architect",
     "Full-Stack + AI Integration Engineer",
@@ -25,6 +24,22 @@ export const DEFAULT_PROFILE: CandidateProfile = {
     "Adobe Premiere Pro",
     "Color Grading (DaVinci Resolve)",
     "Cinematography"
+  ],
+  experience: [
+    {
+      company: "AI Systems Corp",
+      role: "Lead AI Solutions Architect",
+      startDate: "Jan 2022",
+      endDate: "Present",
+      description: "Leading the development of high-performance career assistants and LLM integration workflows."
+    },
+    {
+      company: "Freelance / Global Media",
+      role: "Media Production Specialist",
+      startDate: "Mar 2018",
+      endDate: "Dec 2021",
+      description: "Produced documentary series and high-impact visual storytelling for global brands."
+    }
   ],
   signature_projects: [
     "AI Visual Thesis (AWS-hosted living portfolio)",
